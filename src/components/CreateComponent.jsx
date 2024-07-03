@@ -52,7 +52,7 @@ const CreateComponent = () => {
         }}
       >
         <Box sx={{ p: 2 }}>
-          <Typography variant="h6">Question</Typography>
+          <Typography variant="h6">Create Question</Typography>
           <CreateQuestions />
         </Box>
       </Box>

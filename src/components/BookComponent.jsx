@@ -13,18 +13,22 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
+  DialogContentText,
   Paper,
   Snackbar,
   Stack,
+  Fab,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import AddIcon from "@mui/icons-material/Add";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import ApiRequest from "@/utils/apiRequest";
 import { useSnackbar } from "notistack";
+import Image from "next/image";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().required("Title is required"),
@@ -39,11 +43,13 @@ const BookComponent = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [books, setBooks] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarVariant, setSnackbarVariant] = useState("success");
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -56,6 +62,7 @@ const BookComponent = () => {
     },
     validationSchema: validationSchema,
     onSubmit: async (values, { resetForm }) => {
+      setLoading(true);
       try {
         const formData = new FormData();
         formData.append("title", values.title);
@@ -79,6 +86,7 @@ const BookComponent = () => {
         resetForm();
         fetchBooks();
         setIsUpdateMode(false);
+        setOpenDialog(false);
       } catch (error) {
         console.error(
           isUpdateMode ? "Error updating book:" : "Error creating book:",
@@ -88,6 +96,8 @@ const BookComponent = () => {
           `Failed to ${isUpdateMode ? "update" : "create"} book`,
           "error"
         );
+      } finally {
+        setLoading(false);
       }
     },
   });
@@ -105,8 +115,7 @@ const BookComponent = () => {
     try {
       await ApiRequest.delete(`/book/${id}`);
       setBooks(books.filter((item) => item._id !== id));
-      fetchBooks();
-      setOpenDialog(false);
+      setDeleteDialogOpen(false);
       handleSnackbarOpen("Book deleted successfully", "success");
     } catch (error) {
       console.error("Error deleting book:", error);
@@ -114,13 +123,13 @@ const BookComponent = () => {
     }
   };
 
-  const handleOpenDialog = (item) => {
-    setSelectedBook(item);
+  const handleOpenDialog = () => {
+    setSelectedBook(null);
     setOpenDialog(true);
+    formik.resetForm();
   };
 
   const handleCloseDialog = () => {
-    setSelectedBook(null);
     setOpenDialog(false);
   };
 
@@ -135,6 +144,7 @@ const BookComponent = () => {
       coverImage: null, // Reset cover image when updating
     });
     setIsUpdateMode(true);
+    setOpenDialog(true);
   };
 
   const handleSnackbarOpen = (message, variant) => {
@@ -162,179 +172,224 @@ const BookComponent = () => {
         key={snackbarMessage}
         severity={snackbarVariant}
       />
-      <Typography variant="h4" gutterBottom>
-        Book Management
+      <Typography variant="h4" pl={2}>
+        Book
       </Typography>
-      <Stack direction="row" spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Card elevation={3} sx={{ height: "100%" }}>
-            <CardContent>
-              <form onSubmit={formik.handleSubmit}>
-                <TextField
-                  fullWidth
-                  name="title"
-                  label="Title"
-                  value={formik.values.title}
-                  onChange={formik.handleChange}
-                  error={formik.touched.title && Boolean(formik.errors.title)}
-                  helperText={formik.touched.title && formik.errors.title}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  name="description"
-                  label="Description"
-                  value={formik.values.description}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.description &&
-                    Boolean(formik.errors.description)
-                  }
-                  helperText={
-                    formik.touched.description && formik.errors.description
-                  }
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  name="author"
-                  label="Author"
-                  value={formik.values.author}
-                  onChange={formik.handleChange}
-                  error={formik.touched.author && Boolean(formik.errors.author)}
-                  helperText={formik.touched.author && formik.errors.author}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  name="publication"
-                  label="Publication"
-                  value={formik.values.publication}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.publication &&
-                    Boolean(formik.errors.publication)
-                  }
-                  helperText={
-                    formik.touched.publication && formik.errors.publication
-                  }
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  name="edition"
-                  label="Edition"
-                  value={formik.values.edition}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.edition && Boolean(formik.errors.edition)
-                  }
-                  helperText={formik.touched.edition && formik.errors.edition}
-                  sx={{ mb: 2 }}
-                />
-                <input
-                  accept="image/*"
-                  id="coverImage"
-                  name="coverImage"
-                  type="file"
-                  onChange={(event) =>
-                    formik.setFieldValue(
-                      "coverImage",
-                      event.currentTarget.files[0]
-                    )
-                  }
-                  sx={{ display: "none" }}
-                />
+      <Stack direction="column" spacing={3}>
+        {/* Floating Action Button for Creating Book */}
+        <Fab
+          color="primary"
+          aria-label="add"
+          sx={{ position: "fixed", bottom: 16, right: 16 }}
+          onClick={handleOpenDialog}
+        >
+          <AddIcon />
+        </Fab>
 
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  sx={{ mr: 2, mt: 2 }}
-                >
-                  {isUpdateMode ? "Update" : "Submit"}
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    formik.resetForm();
-                    setIsUpdateMode(false);
+        {/* Books Grid */}
+        <Grid container spacing={2}>
+          {books.map((item) => (
+            <Grid item xs={12} sm={6} md={4} lg={4} key={item._id}>
+              <Paper
+                elevation={3}
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <Card
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
                   }}
-                  sx={{ mt: 2 }}
                 >
-                  Reset
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Grid container spacing={2}>
-            {books.map((item) => (
-              <Grid item xs={12} sm={6} key={item._id}>
-                <Paper elevation={3} sx={{ maxWidth: "100%" }}>
-                  <Card>
-                    <CardHeader title={item.title} />
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        Author: {item.author}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Publication: {item.publication}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Edition: {item.edition}
-                      </Typography>
-                      <img
-                        src={item.coverImage}
+                  <CardHeader title={item.title} />
+                  <CardContent sx={{ flex: "1 0 auto", overflow: "hidden" }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Author: {item.author}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Publication: {item.publication}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Edition: {item.edition}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        marginTop: 2,
+                      }}
+                    >
+                      <Image
+                        src={item.coverImage || "/public/book.png"}
                         alt={item.title}
-                        style={{ width: "100%", height: "auto", marginTop: 10 }}
+                        width={400}
+                        height={250}
+                        style={{ objectFit: "cover" }}
                       />
-                    </CardContent>
-                    <CardActions>
-                      <IconButton
-                        aria-label="edit"
-                        onClick={() => handleEditBook(item)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label="delete"
-                        onClick={() => handleOpenDialog(item)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </CardActions>
-                  </Card>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+                    </Box>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: "flex-end" }}>
+                    <IconButton
+                      aria-label="edit"
+                      onClick={() => handleEditBook(item)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      aria-label="delete"
+                      onClick={() => {
+                        setSelectedBook(item);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Paper>
+            </Grid>
+          ))}
         </Grid>
       </Stack>
 
+      {/* Create/Update Book Dialog */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
+        aria-labelledby="form-dialog-title"
+      >
+        <DialogTitle id="form-dialog-title">
+          {isUpdateMode ? "Update Book" : "Create Book"}
+        </DialogTitle>
+        <DialogContent>
+          <form onSubmit={formik.handleSubmit}>
+            <TextField
+              fullWidth
+              name="title"
+              label="Title"
+              value={formik.values.title}
+              onChange={formik.handleChange}
+              error={formik.touched.title && Boolean(formik.errors.title)}
+              helperText={formik.touched.title && formik.errors.title}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              name="description"
+              label="Description"
+              value={formik.values.description}
+              onChange={formik.handleChange}
+              error={
+                formik.touched.description && Boolean(formik.errors.description)
+              }
+              helperText={
+                formik.touched.description && formik.errors.description
+              }
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              name="author"
+              label="Author"
+              value={formik.values.author}
+              onChange={formik.handleChange}
+              error={formik.touched.author && Boolean(formik.errors.author)}
+              helperText={formik.touched.author && formik.errors.author}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              name="publication"
+              label="Publication"
+              value={formik.values.publication}
+              onChange={formik.handleChange}
+              error={
+                formik.touched.publication && Boolean(formik.errors.publication)
+              }
+              helperText={
+                formik.touched.publication && formik.errors.publication
+              }
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              name="edition"
+              label="Edition"
+              value={formik.values.edition}
+              onChange={formik.handleChange}
+              error={formik.touched.edition && Boolean(formik.errors.edition)}
+              helperText={formik.touched.edition && formik.errors.edition}
+              sx={{ mb: 2 }}
+            />
+            <input
+              accept="image/*"
+              id="coverImage"
+              name="coverImage"
+              type="file"
+              onChange={(event) =>
+                formik.setFieldValue("coverImage", event.currentTarget.files[0])
+              }
+              style={{ display: "none" }}
+            />
+            <label htmlFor="coverImage">
+              <Button
+                variant="contained"
+                color="primary"
+                component="span"
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                {formik.values.coverImage
+                  ? formik.values.coverImage.name
+                  : "Upload Cover Image"}
+              </Button>
+            </label>
+            <DialogActions>
+              <Button onClick={handleCloseDialog} color="primary">
+                Cancel
+              </Button>
+              <Button type="submit" color="primary" variant="contained">
+                {loading ? (
+                  <CircularProgress size={24} />
+                ) : isUpdateMode ? (
+                  "Update"
+                ) : (
+                  "Submit"
+                )}
+              </Button>
+            </DialogActions>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">Delete Book?</DialogTitle>
+        <DialogTitle id="alert-dialog-title">{"Delete Book?"}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete this book?
+            Are you sure you want to delete {selectedBook?.title}?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
             Cancel
           </Button>
           <Button
-            onClick={() => handleDelete(selectedBook._id)}
-            color="error"
+            onClick={() => {
+              handleDelete(selectedBook._id);
+            }}
+            color="primary"
             autoFocus
           >
             Delete
