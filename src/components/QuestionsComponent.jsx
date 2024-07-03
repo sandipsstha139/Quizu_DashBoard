@@ -78,6 +78,8 @@ const QuestionsComponent = () => {
               <TableCell>Question Title</TableCell>
               <TableCell>Options</TableCell>
               <TableCell>Correct Option</TableCell>
+              <TableCell>Cover Image</TableCell>
+              <TableCell>Category</TableCell>
               <TableCell>Quiz</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
@@ -88,7 +90,17 @@ const QuestionsComponent = () => {
                 <TableCell>{question.questionTitle}</TableCell>
                 <TableCell>{question.options.join(", ")}</TableCell>
                 <TableCell>{question.correct_option}</TableCell>
-                <TableCell>{question.quiz}</TableCell>
+                <TableCell>
+                  {question.coverImage && (
+                    <img
+                      src={question.coverImage}
+                      alt="Cover Image"
+                      style={{ maxWidth: 100, maxHeight: 100 }}
+                    />
+                  )}
+                </TableCell>
+                <TableCell>{question?.quiz?.category?.name}</TableCell>{" "}
+                <TableCell>{question?.quiz?.title}</TableCell>{" "}
                 <TableCell>
                   <IconButton
                     edge="end"

@@ -1,30 +1,40 @@
 import React, { useState, useEffect } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Stack,
+  Typography,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  TextField,
+  MenuItem,
+} from "@mui/material";
 import Avatar from "@mui/material/Avatar";
-import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
+import EditIcon from "@mui/icons-material/Edit";
 import { useSnackbar } from "notistack";
-
 import ApiRequest from "@/utils/apiRequest";
+import CreateCategory from "@/views/create/CreateCategory";
 
 const CategoryComponent = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [categories, setCategories] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState("");
 
   const fetchCategories = async () => {
     try {
@@ -60,6 +70,33 @@ const CategoryComponent = () => {
     }
   };
 
+  const handleOpenEditDialog = (category) => {
+    setSelectedCategory(category);
+    setEditCategoryName(category.name);
+    setEditCategoryId(category._id); // Assuming category._id is available
+    setOpenEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setSelectedCategory(null);
+    setEditCategoryName("");
+    setEditCategoryId("");
+    setOpenEditDialog(false);
+  };
+
+  const handleEditCategory = async () => {
+    try {
+      const updatedCategory = { name: editCategoryName };
+      await ApiRequest.patch(`/category/${editCategoryId}`, updatedCategory);
+      enqueueSnackbar("Category updated successfully", { variant: "success" });
+      fetchCategories();
+      handleCloseEditDialog();
+    } catch (error) {
+      console.log(error);
+      enqueueSnackbar("Failed to update category", { variant: "error" });
+    }
+  };
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -81,6 +118,7 @@ const CategoryComponent = () => {
               <TableCell>Name</TableCell>
               <TableCell>Created At</TableCell>
               <TableCell>Actions</TableCell>
+              <TableCell>Edit</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -97,6 +135,15 @@ const CategoryComponent = () => {
                     onClick={() => handleOpenDialog(category)}
                   >
                     <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    edge="end"
+                    aria-label="edit"
+                    onClick={() => handleOpenEditDialog(category)}
+                  >
+                    <EditIcon />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -121,7 +168,7 @@ const CategoryComponent = () => {
                 {" "}
                 {selectedCategory.name}
               </span>
-              "?
+              ?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -139,6 +186,35 @@ const CategoryComponent = () => {
               autoFocus
             >
               Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+      {selectedCategory && (
+        <Dialog
+          open={openEditDialog}
+          onClose={handleCloseEditDialog}
+          aria-labelledby="form-dialog-title"
+        >
+          <DialogTitle id="form-dialog-title">Edit Category</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              id="categoryName"
+              label="Category Name"
+              type="text"
+              fullWidth
+              value={editCategoryName}
+              onChange={(e) => setEditCategoryName(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseEditDialog} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleEditCategory} color="primary">
+              Save
             </Button>
           </DialogActions>
         </Dialog>

@@ -133,6 +133,7 @@ const Dashboard = () => {
       enqueueSnackbar("Logout Successful", {
         variant: "success",
       });
+      localStorage.removeItem("token");
       setIsAuthenticated(false);
       router.push("/login");
     } catch (error) {

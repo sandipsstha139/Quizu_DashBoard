@@ -7,7 +7,6 @@ import {
   MenuItem,
   Stack,
   FormControl,
-  FormLabel,
   InputLabel,
 } from "@mui/material";
 import { useFormik } from "formik";
@@ -17,6 +16,7 @@ import { useSnackbar } from "notistack";
 
 const validationSchema = Yup.object().shape({
   questionTitle: Yup.string().required("Question Title is required"),
+  coverImage: Yup.mixed(),
   options: Yup.array()
     .of(Yup.string().required("Option cannot be empty"))
     .min(4, "At least 4 options are required")
@@ -26,38 +26,80 @@ const validationSchema = Yup.object().shape({
 });
 
 const CreateQuestions = () => {
-  const [quizs, setQuizs] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [quizzes, setQuizzes] = useState([]);
+  const [categories, setCategories] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
 
-  const fetchQuizs = async () => {
+  const fetchCategoryQuiz = async (id) => {
     try {
-      const response = await ApiRequest.get("/quiz");
-      setQuizs(response?.data?.data?.quizs || []);
+      const response = await ApiRequest.get(`/category/${id}`);
+      setQuizzes(response?.data?.data?.category?.quizzes || []);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching quizzes:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await ApiRequest.get("/category");
+      setCategories(response?.data?.data?.categories || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
     }
   };
 
   useEffect(() => {
-    fetchQuizs();
+    fetchCategories();
   }, []);
 
   const formik = useFormik({
     initialValues: {
       questionTitle: "",
+      coverImage: null,
       options: ["", "", "", ""],
       correct_option: "",
+      category: "",
       quiz: "",
     },
     validationSchema: validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        const res = await ApiRequest.post("/question", values);
-        enqueueSnackbar("Question added successfully", { variant: "success" });
+        if (values.options.indexOf(values.correct_option) === -1) {
+          enqueueSnackbar("Correct option must be one of the options", {
+            variant: "error",
+          });
+          return;
+        }
+        const formData = new FormData();
+        formData.append("questionTitle", values.questionTitle);
+        formData.append("coverImage", values.coverImage);
+        values.options.forEach((option, index) => {
+          formData.append(`options[${index}]`, option);
+        });
+        formData.append("correct_option", values.correct_option);
+        formData.append("category", values.category);
+        formData.append("quiz", values.quiz);
+
+        if (selectedQuestion) {
+          await ApiRequest.patch(`/question/${selectedQuestion._id}`, formData);
+          enqueueSnackbar("Question updated successfully", {
+            variant: "success",
+          });
+        } else {
+          await ApiRequest.post("/question", formData);
+          enqueueSnackbar("Question added successfully", {
+            variant: "success",
+          });
+        }
+
         resetForm();
+        setSelectedQuestion(null);
+        setImagePreview(null);
       } catch (error) {
-        console.log(error);
-        enqueueSnackbar("Failed to add question", { variant: "error" });
+        console.error("Error adding/updating question:", error);
+        enqueueSnackbar("Failed to add/update question", { variant: "error" });
       }
     },
   });
@@ -66,6 +108,39 @@ const CreateQuestions = () => {
     const newOptions = [...formik.values.options];
     newOptions[index] = event.target.value;
     formik.setFieldValue("options", newOptions);
+  };
+
+  const handleCategoryChange = (event) => {
+    const selectedCategoryId = event.target.value;
+    formik.setFieldValue("category", selectedCategoryId);
+    fetchCategoryQuiz(selectedCategoryId);
+  };
+
+  const handleImageChange = (event) => {
+    formik.setFieldValue("coverImage", event.currentTarget.files[0]);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.readyState === 2) {
+        setImagePreview(reader.result);
+      }
+    };
+    reader.readAsDataURL(event.currentTarget.files[0]);
+  };
+
+  const handleEditQuestion = (question) => {
+    setSelectedQuestion(question);
+    formik.setValues({
+      questionTitle: question.questionTitle,
+      coverImage: question.coverImage,
+      options: question.options,
+      correct_option: question.correct_option,
+      category: question.category._id,
+      quiz: question.quiz._id,
+    });
+    if (question.coverImage) {
+      setImagePreview(question.coverImage);
+    }
   };
 
   return (
@@ -85,6 +160,44 @@ const CreateQuestions = () => {
             formik.touched.questionTitle && formik.errors.questionTitle
           }
         />
+        <Stack sx={{ mb: 2 }}>
+          <input
+            accept="image/*"
+            id="coverImageQuestion"
+            name="coverImage"
+            type="file"
+            onChange={handleImageChange}
+            style={{ display: "none" }}
+          />
+          <label htmlFor="coverImageQuestion">
+            <Button
+              variant="outlined"
+              component="span"
+              sx={{
+                mt: 2,
+                textTransform: "none",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                backgroundColor: "#f8f8f8",
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "#e0e0e0",
+                },
+              }}
+            >
+              Upload Cover Image
+            </Button>
+          </label>
+          {imagePreview && (
+            <Box sx={{ mt: 2 }}>
+              <img
+                src={imagePreview}
+                alt="Cover Preview"
+                style={{ maxWidth: "120px", maxHeight: "120px" }}
+              />
+            </Box>
+          )}
+        </Stack>
         <Stack direction="row" spacing={2}>
           {[0, 1].map((index) => (
             <TextField
@@ -149,21 +262,40 @@ const CreateQuestions = () => {
           />
 
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="select-category-label">Select Category</InputLabel>
+            <InputLabel htmlFor="select-category">Select Category</InputLabel>
             <Select
-              id="select-category-label"
-              name="quiz"
-              label="Select Quiz"
-              placeholder="Select Quiz"
+              id="select-category"
+              name="category"
               fullWidth
+              value={formik.values.category}
+              onChange={handleCategoryChange}
+              error={formik.touched.category && Boolean(formik.errors.category)}
               sx={{ mb: 2 }}
+            >
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <MenuItem key={category._id} value={category._id}>
+                    {category.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem value="">No Category available</MenuItem>
+              )}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel htmlFor="select-quiz">Select Quiz</InputLabel>
+            <Select
+              id="select-quiz"
+              name="quiz"
+              fullWidth
               value={formik.values.quiz}
               onChange={formik.handleChange}
               error={formik.touched.quiz && Boolean(formik.errors.quiz)}
-              helperText={formik.touched.quiz && formik.errors.quiz}
+              sx={{ mb: 2 }}
             >
-              {quizs.length > 0 ? (
-                quizs.map((quiz) => (
+              {quizzes.length > 0 ? (
+                quizzes.map((quiz) => (
                   <MenuItem key={quiz._id} value={quiz._id}>
                     {quiz.title}
                   </MenuItem>
@@ -175,7 +307,7 @@ const CreateQuestions = () => {
           </FormControl>
         </Stack>
         <Button type="submit" variant="contained" color="primary">
-          Submit
+          {selectedQuestion ? "Update" : "Submit"}
         </Button>
       </form>
     </Box>

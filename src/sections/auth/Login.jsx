@@ -1,13 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Stack,
   TextField,
   Button,
   Typography,
-  Snackbar,
-  Alert,
   Paper,
 } from "@mui/material";
 import { useFormik } from "formik";
@@ -27,14 +25,16 @@ const validationSchema = Yup.object({
 });
 
 const LoginPage = () => {
-  const { isAuthenticated, setUser, user, setIsAuthenticated } = useAuth();
+  const { isAuthenticated, setUser, setIsAuthenticated } = useAuth();
   const [errorMessage, setErrorMessage] = useState("");
-
-  console.log(isAuthenticated, user);
-
   const router = useRouter();
-
   const { enqueueSnackbar } = useSnackbar();
+
+  useEffect(() => {
+    if (isAuthenticated && typeof window !== "undefined") {
+      router.push("/");
+    }
+  }, [isAuthenticated, router]);
 
   const formik = useFormik({
     initialValues: {
@@ -45,10 +45,14 @@ const LoginPage = () => {
     onSubmit: async (values) => {
       try {
         const res = await ApiRequest.post("/user/login", values);
-
         const { loggedInUser } = res?.data?.data;
+
         if (loggedInUser?.role === "admin") {
           setIsAuthenticated(true);
+          localStorage.setItem(
+            "token",
+            JSON.stringify(res?.data?.data?.accessToken)
+          );
           setUser(loggedInUser);
           enqueueSnackbar("Login Successful", {
             variant: "success",
@@ -66,8 +70,6 @@ const LoginPage = () => {
       }
     },
   });
-
-  if (isAuthenticated) router.push("/");
 
   return (
     <Box

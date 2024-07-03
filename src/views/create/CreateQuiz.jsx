@@ -39,6 +39,10 @@ const CreateQuiz = () => {
     title: Yup.string().required("Title is required"),
     description: Yup.string().required("Description is required"),
     coverImage: Yup.mixed().required("Cover Image is required"),
+    duration: Yup.number().notOneOf(
+      [0, null],
+      "Duration must not be 0 or null"
+    ),
   });
 
   const formik = useFormik({
@@ -46,6 +50,7 @@ const CreateQuiz = () => {
       title: "",
       description: "",
       coverImage: null,
+      duration: 0,
     },
     validationSchema: validationSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -55,6 +60,7 @@ const CreateQuiz = () => {
         formData.append("description", values.description);
         formData.append("coverImage", values.coverImage);
         formData.append("category", selectedCategory);
+        formData.append("duration", values.duration);
 
         const res = await ApiRequest.post("/quiz", formData, {
           headers: {
@@ -134,7 +140,7 @@ const CreateQuiz = () => {
           }
           helperText={formik.touched.description && formik.errors.description}
         />
-        <Stack sx={{ mb: 1 }}>
+        <Stack sx={{ mb: 2 }}>
           <input
             accept="image/*"
             id="coverImage"
@@ -153,7 +159,6 @@ const CreateQuiz = () => {
                 textTransform: "none",
                 borderRadius: "4px",
                 border: "1px solid #ccc",
-                // padding: "6px 12px",
                 backgroundColor: "#f8f8f8",
                 cursor: "pointer",
                 "&:hover": {
@@ -179,7 +184,17 @@ const CreateQuiz = () => {
             </div>
           )}
         </Stack>
-
+        <TextField
+          name="duration"
+          label="Duration (minutes)"
+          type="number"
+          fullWidth
+          sx={{ mb: 2 }}
+          value={formik.values.duration}
+          onChange={formik.handleChange}
+          error={formik.touched.duration && Boolean(formik.errors.duration)}
+          helperText={formik.touched.duration && formik.errors.duration}
+        />
         <Button type="submit" variant="contained" color="primary">
           Submit
         </Button>
