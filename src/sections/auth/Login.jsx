@@ -51,7 +51,7 @@ const LoginPage = () => {
           setIsAuthenticated(true);
           localStorage.setItem(
             "token",
-            JSON.stringify(res?.data?.data?.accessToken)
+            JSON.stringify(res?.data?.data?.refreshToken)
           );
           setUser(loggedInUser);
           enqueueSnackbar("Login Successful", {
