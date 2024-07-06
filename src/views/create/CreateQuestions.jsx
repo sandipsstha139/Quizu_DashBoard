@@ -16,13 +16,13 @@ import { useSnackbar } from "notistack";
 
 const validationSchema = Yup.object().shape({
   questionTitle: Yup.string().required("Question Title is required"),
-  coverImage: Yup.mixed(),
   options: Yup.array()
     .of(Yup.string().required("Option cannot be empty"))
     .min(4, "At least 4 options are required")
     .max(4, "No more than 4 options allowed"),
   correct_option: Yup.string().required("Correct Option is required"),
   quiz: Yup.string().required("Quiz is required"),
+  category: Yup.string().required("Category is required"),
 });
 
 const CreateQuestions = () => {
@@ -72,9 +72,14 @@ const CreateQuestions = () => {
           });
           return;
         }
+
         const formData = new FormData();
         formData.append("questionTitle", values.questionTitle);
-        formData.append("coverImage", values.coverImage);
+
+        if (values.coverImage) {
+          formData.append("coverImage", values.coverImage);
+        }
+
         values.options.forEach((option, index) => {
           formData.append(`options[${index}]`, option);
         });
@@ -132,7 +137,6 @@ const CreateQuestions = () => {
     setSelectedQuestion(question);
     formik.setValues({
       questionTitle: question.questionTitle,
-      coverImage: question.coverImage,
       options: question.options,
       correct_option: question.correct_option,
       category: question.category._id,
