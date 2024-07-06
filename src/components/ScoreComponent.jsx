@@ -26,6 +26,7 @@ const ScoreComponent = () => {
   const [scores, setScores] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedScore, setSelectedScore] = useState(null);
+  console.log(scores);
 
   const fetchScores = async () => {
     try {
@@ -87,9 +88,9 @@ const ScoreComponent = () => {
                 <TableCell>{score.user}</TableCell>
                 <TableCell>{score.quiz}</TableCell>
                 <TableCell>{score.score}</TableCell>
-                <TableCell>{score.correct_score}</TableCell>
-                <TableCell>{score.wrong_score}</TableCell>
-                <TableCell>{score.unattempted}</TableCell>
+                <TableCell>{score.correctAnswers}</TableCell>
+                <TableCell>{score.wrongAnswers}</TableCell>
+                <TableCell>{score.notAnswered}</TableCell>
                 <TableCell>
                   {new Date(score.createdAt).toLocaleString()}
                 </TableCell>
