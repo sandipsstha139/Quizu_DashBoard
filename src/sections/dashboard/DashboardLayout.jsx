@@ -112,7 +112,7 @@ const Drawer = styled(MuiDrawer, {
 const DashboardLayout = () => {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
-  const { setIsAuthenticated } = useAuth();
+  const { setIsAuthenticated, isAuthenticated } = useAuth();
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [selectedPage, setSelectedPage] = React.useState("Dashboard");
@@ -168,102 +168,111 @@ const DashboardLayout = () => {
     }
   };
 
+  console.log(isAuthenticated);
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar
-        position="fixed"
-        open={open}
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          pr: "10px",
-          bgcolor: "#00b894",
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
+      {isAuthenticated && (
+        <>
+          <AppBar
+            position="fixed"
+            open={open}
             sx={{
-              marginRight: 5,
-              ...(open && { display: "none" }),
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              pr: "10px",
+              bgcolor: "#00b894",
             }}
           >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Quizu Dashboard
-          </Typography>
-        </Toolbar>
-        <Logout onClick={handleLogout} sx={{ cursor: "pointer" }} />
-      </AppBar>
-      <Drawer variant="permanent" open={open}>
-        <DrawerHeader sx={{ bgcolor: "#00b894" }}>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === "rtl" ? (
-              <ChevronRightIcon />
-            ) : (
-              <ChevronLeftIcon />
-            )}
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          {[
-            "User",
-            "Create",
-            "Category",
-            "Quiz",
-            "Questions",
-            "Book",
-            "News",
-            "Score",
-          ].map((text, index) => (
-            <ListItem
-              key={text}
-              disablePadding
-              sx={{ display: "block" }}
-              onClick={() => handleNavigation(text)}
-              button
-            >
-              <ListItemButton
+            <Toolbar>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                onClick={handleDrawerOpen}
+                edge="start"
                 sx={{
-                  minHeight: 48,
-                  justifyContent: open ? "initial" : "center",
-                  px: 2.5,
+                  marginRight: 5,
+                  ...(open && { display: "none" }),
                 }}
               >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : "auto",
-                    justifyContent: "center",
-                  }}
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" noWrap component="div">
+                Quizu Dashboard
+              </Typography>
+            </Toolbar>
+            <Logout onClick={handleLogout} sx={{ cursor: "pointer" }} />
+          </AppBar>
+          <Drawer variant="permanent" open={open}>
+            <DrawerHeader sx={{ bgcolor: "#00b894" }}>
+              <IconButton onClick={handleDrawerClose}>
+                {theme.direction === "rtl" ? (
+                  <ChevronRightIcon />
+                ) : (
+                  <ChevronLeftIcon />
+                )}
+              </IconButton>
+            </DrawerHeader>
+            <Divider />
+            <List>
+              {[
+                "User",
+                "Create",
+                "Category",
+                "Quiz",
+                "Questions",
+                "Book",
+                "News",
+                "Score",
+              ].map((text, index) => (
+                <ListItem
+                  key={text}
+                  disablePadding
+                  sx={{ display: "block" }}
+                  onClick={() => handleNavigation(text)}
+                  button
                 >
-                  {index === 0 && <GroupIcon />}
-                  {index === 1 && <Create />}
-                  {index === 2 && <Category />}
-                  {index === 3 && <QuizIcon />}
-                  {index === 4 && <QuestionMarkIcon />}
-                  {index === 5 && <MenuBookIcon />}
-                  {index === 6 && <NewspaperIcon />}
-                  {index === 7 && <EmojiEventsIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <DrawerHeader />
-        {renderComponent()}
-      </Box>
+                  <ListItemButton
+                    sx={{
+                      minHeight: 48,
+                      justifyContent: open ? "initial" : "center",
+                      px: 2.5,
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 0,
+                        mr: open ? 3 : "auto",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {index === 0 && <GroupIcon />}
+                      {index === 1 && <Create />}
+                      {index === 2 && <Category />}
+                      {index === 3 && <QuizIcon />}
+                      {index === 4 && <QuestionMarkIcon />}
+                      {index === 5 && <MenuBookIcon />}
+                      {index === 6 && <NewspaperIcon />}
+                      {index === 7 && <EmojiEventsIcon />}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={text}
+                      sx={{ opacity: open ? 1 : 0 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Drawer>
+          <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+            <DrawerHeader />
+            {renderComponent()}
+          </Box>
+        </>
+      )}
     </Box>
   );
 };

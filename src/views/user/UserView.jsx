@@ -31,6 +31,7 @@ const UserView = () => {
   const fetchUsers = async () => {
     try {
       const response = await ApiRequest.get("/user");
+      console.log(response);
       setUsers(response?.data?.data?.users?.role_user || []);
     } catch (error) {
       console.log(error);
