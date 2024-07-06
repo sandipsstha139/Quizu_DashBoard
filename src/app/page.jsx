@@ -12,7 +12,8 @@ const page = () => {
     router.push("/login");
   }
 
-  return <Dashboard />;
+  return <div>Hello</div>;
+  // return <Dashboard />;
 };
 
 export default page;

@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "@/context/userContext";
 import MyApp from "./_app.jsx";
 import ThemeRegistry from "../../theme/ThemeRegistry";
+import DashboardLayout from "@/sections/dashboard/DashboardLayout.jsx";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +17,10 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <AuthProvider>
           <ThemeRegistry>
-            <MyApp>{children}</MyApp>{" "}
+            <MyApp>
+              <DashboardLayout />
+              {children}
+            </MyApp>{" "}
           </ThemeRegistry>
         </AuthProvider>
       </body>
