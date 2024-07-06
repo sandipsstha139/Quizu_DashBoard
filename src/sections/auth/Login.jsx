@@ -32,7 +32,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (isAuthenticated && typeof window !== "undefined") {
-      router.push("/user");
+      router.push("/");
     }
   }, [isAuthenticated, router]);
 

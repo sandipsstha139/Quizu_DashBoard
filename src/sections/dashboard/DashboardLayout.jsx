@@ -148,7 +148,7 @@ const DashboardLayout = () => {
   const renderComponent = () => {
     switch (selectedPage) {
       case "User":
-        return router.push("/user");
+        return router.push("/");
       case "Create":
         return router.push("/create");
       case "Category":
