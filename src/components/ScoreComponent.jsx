@@ -75,6 +75,7 @@ const ScoreComponent = () => {
             <TableRow>
               <TableCell>Avatar</TableCell>
               <TableCell>Username</TableCell>
+              <TableCell>Category</TableCell>
               <TableCell>Quiz</TableCell>
               <TableCell>Score</TableCell>
               <TableCell>Correct Answers</TableCell>
@@ -94,7 +95,10 @@ const ScoreComponent = () => {
                   />
                 </TableCell>
                 <TableCell>{score?.user?.fullname}</TableCell>
-                <TableCell>{score?.quiz?.title || "No title"}</TableCell>{" "}
+                <TableCell>
+                  {score?.quiz?.category?.name || "Undefined"}
+                </TableCell>{" "}
+                <TableCell>{score?.quiz?.title || "undefined"}</TableCell>{" "}
                 {/* Update here */}
                 <TableCell>{score.score}</TableCell>
                 <TableCell>{score.correctAnswers}</TableCell>
