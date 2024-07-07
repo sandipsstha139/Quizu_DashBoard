@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  TextField,
-  Button,
   Grid,
+  Paper,
   Card,
   CardHeader,
   CardContent,
@@ -13,12 +12,14 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
-  Paper,
+  DialogContentText,
   Snackbar,
   Stack,
   Fab,
+  Pagination,
+  Button,
+  TextField,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -27,8 +28,8 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import ApiRequest from "@/utils/apiRequest";
 import { useSnackbar } from "notistack";
-import CircularProgress from "@mui/material/CircularProgress"; // Loading indicator
 import Image from "next/image";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().required("Title is required"),
@@ -47,6 +48,8 @@ const NewsComponent = () => {
   const [snackbarVariant, setSnackbarVariant] = useState("success");
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6); // Number of items per page
 
   const formik = useFormik({
     initialValues: {
@@ -90,10 +93,14 @@ const NewsComponent = () => {
           "error"
         );
       } finally {
-        setLoading(false); // Stop loading indicator
+        setLoading(false);
       }
     },
   });
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
 
   const fetchNews = async () => {
     try {
@@ -157,9 +164,12 @@ const NewsComponent = () => {
     setSnackbarOpen(false);
   };
 
-  useEffect(() => {
-    fetchNews();
-  }, []);
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentNews = news.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -188,7 +198,7 @@ const NewsComponent = () => {
 
         {/* News Grid */}
         <Grid container spacing={2}>
-          {news.map((item) => (
+          {currentNews.map((item) => (
             <Grid item xs={12} sm={6} md={4} lg={4} key={item._id}>
               <Paper
                 elevation={3}
@@ -219,17 +229,12 @@ const NewsComponent = () => {
                         marginTop: 2,
                       }}
                     >
-                      {loading && <CircularProgress />}{" "}
-                      {/* Loading indicator */}
                       <Image
                         src={item.coverImage}
                         alt={item.title}
                         width={400}
                         height={250}
-                        style={{
-                          objectFit: "cover",
-                          display: loading ? "none" : "block",
-                        }}
+                        style={{ objectFit: "cover" }}
                       />
                     </Box>
                   </CardContent>
@@ -252,6 +257,16 @@ const NewsComponent = () => {
             </Grid>
           ))}
         </Grid>
+
+        {/* Pagination */}
+        <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+          <Pagination
+            count={Math.ceil(news.length / itemsPerPage)}
+            page={currentPage}
+            onChange={(event, page) => paginate(page)}
+            color="primary"
+          />
+        </Box>
       </Stack>
 
       {/* Create/Update News Dialog */}
@@ -302,31 +317,26 @@ const NewsComponent = () => {
               style={{ display: "none" }}
             />
             <label htmlFor="coverImage">
-              <Button
-                variant="contained"
-                color="primary"
-                component="span"
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                {formik.values.coverImage
-                  ? formik.values.coverImage.name
-                  : "Upload Cover Image"}
+              <Button variant="contained" component="span">
+                Upload Image
               </Button>
             </label>
-            <DialogActions>
-              <Button onClick={handleCloseDialog} color="primary">
-                Cancel
-              </Button>
-              <Button type="submit" color="primary" variant="contained">
-                {isUpdateMode ? "Update" : "Submit"}
-              </Button>
-            </DialogActions>
           </form>
         </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button
+            onClick={formik.handleSubmit}
+            disabled={loading}
+            color="primary"
+            variant="contained"
+          >
+            {isUpdateMode ? "Update" : "Create"}
+          </Button>
+        </DialogActions>
       </Dialog>
 
-      {/* Delete News Dialog */}
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
         onClose={handleCloseDialog}
@@ -340,10 +350,8 @@ const NewsComponent = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDelete} color="primary" autoFocus>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleDelete} autoFocus>
             Delete
           </Button>
         </DialogActions>

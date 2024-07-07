@@ -19,6 +19,7 @@ import {
   Snackbar,
   Stack,
   Fab,
+  Pagination,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -50,6 +51,8 @@ const BookComponent = () => {
   const [snackbarVariant, setSnackbarVariant] = useState("success");
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6); // Number of items per page
 
   const formik = useFormik({
     initialValues: {
@@ -83,8 +86,21 @@ const BookComponent = () => {
           response = await ApiRequest.post("/book", formData);
           handleSnackbarOpen("Book created successfully", "success");
         }
+
+        const updatedBook = response.data.data.book; // Assuming the response structure returns the updated or newly created book object
+
+        // Update books state based on whether it's an update or create operation
+        if (isUpdateMode) {
+          setBooks(
+            books.map((book) =>
+              book._id === updatedBook._id ? updatedBook : book
+            )
+          );
+        } else {
+          setBooks([...books, updatedBook]);
+        }
+
         resetForm();
-        fetchBooks();
         setIsUpdateMode(false);
         setOpenDialog(false);
       } catch (error) {
@@ -101,6 +117,10 @@ const BookComponent = () => {
       }
     },
   });
+
+  useEffect(() => {
+    fetchBooks();
+  }, []);
 
   const fetchBooks = async () => {
     try {
@@ -157,9 +177,12 @@ const BookComponent = () => {
     setSnackbarOpen(false);
   };
 
-  useEffect(() => {
-    fetchBooks();
-  }, []);
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBooks = books.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -188,7 +211,7 @@ const BookComponent = () => {
 
         {/* Books Grid */}
         <Grid container spacing={2}>
-          {books.map((item) => (
+          {currentBooks.map((item) => (
             <Grid item xs={12} sm={6} md={4} lg={4} key={item._id}>
               <Paper
                 elevation={3}
@@ -254,6 +277,16 @@ const BookComponent = () => {
             </Grid>
           ))}
         </Grid>
+
+        {/* Pagination */}
+        <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+          <Pagination
+            count={Math.ceil(books.length / itemsPerPage)}
+            page={currentPage}
+            onChange={(event, page) => paginate(page)}
+            color="primary"
+          />
+        </Box>
       </Stack>
 
       {/* Create/Update Book Dialog */}
@@ -329,43 +362,35 @@ const BookComponent = () => {
             />
             <input
               accept="image/*"
-              id="coverImage"
-              name="coverImage"
+              id="contained-button-file"
+              multiple
               type="file"
-              onChange={(event) =>
-                formik.setFieldValue("coverImage", event.currentTarget.files[0])
-              }
-              style={{ display: "none" }}
+              hidden
+              onChange={(event) => {
+                formik.setFieldValue(
+                  "coverImage",
+                  event.currentTarget.files[0]
+                );
+              }}
             />
-            <label htmlFor="coverImage">
-              <Button
-                variant="contained"
-                color="primary"
-                component="span"
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                {formik.values.coverImage
-                  ? formik.values.coverImage.name
-                  : "Upload Cover Image"}
+            <label htmlFor="contained-button-file">
+              <Button variant="contained" component="span">
+                Upload Book Image
               </Button>
             </label>
-            <DialogActions>
-              <Button onClick={handleCloseDialog} color="primary">
-                Cancel
-              </Button>
-              <Button type="submit" color="primary" variant="contained">
-                {loading ? (
-                  <CircularProgress size={24} />
-                ) : isUpdateMode ? (
-                  "Update"
-                ) : (
-                  "Submit"
-                )}
-              </Button>
-            </DialogActions>
           </form>
         </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button
+            onClick={formik.handleSubmit}
+            disabled={loading}
+            variant="contained"
+            color="primary"
+          >
+            {loading ? <CircularProgress size={24} /> : "Submit"}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
@@ -375,10 +400,10 @@ const BookComponent = () => {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">{"Delete Book?"}</DialogTitle>
+        <DialogTitle id="alert-dialog-title">{"Confirm Delete"}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete {selectedBook?.title}?
+            Are you sure you want to delete this book?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

@@ -8,15 +8,15 @@ import {
   InputLabel,
   Stack,
   FormControl,
-  Typography,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import ApiRequest from "@/utils/apiRequest";
 import { useSnackbar } from "notistack";
+import { useAuth } from "@/context/userContext";
 
 const CreateQuiz = () => {
-  const [categories, setCategories] = useState([]);
+  const { categories, fetchCategories, addQuiz } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
 
@@ -25,15 +25,6 @@ const CreateQuiz = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await ApiRequest.get("/category");
-      setCategories(response?.data?.data?.categories || []);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
 
   const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required"),
@@ -62,14 +53,14 @@ const CreateQuiz = () => {
         formData.append("category", selectedCategory);
         formData.append("duration", values.duration);
 
-        const res = await ApiRequest.post("/quiz", formData, {
+        const response = await ApiRequest.post("/quiz", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
 
+        addQuiz(response.data.data.quiz);
         enqueueSnackbar("Quiz added successfully", { variant: "success" });
-        console.log("Form Values:", values);
         setSelectedCategory("");
         resetForm();
         setImagePreview(null);
@@ -140,54 +131,9 @@ const CreateQuiz = () => {
           }
           helperText={formik.touched.description && formik.errors.description}
         />
-        <Stack sx={{ mb: 2 }}>
-          <input
-            accept="image/*"
-            id="coverImage"
-            name="coverImage"
-            type="file"
-            onChange={handleImageChange}
-            style={{ display: "none" }}
-          />
-          <label htmlFor="coverImage">
-            <Button
-              variant="outlined"
-              component="span"
-              sx={{
-                mt: 2,
-                mr: 2,
-                textTransform: "none",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                backgroundColor: "#f8f8f8",
-                cursor: "pointer",
-                "&:hover": {
-                  backgroundColor: "#e0e0e0",
-                },
-              }}
-            >
-              Upload Cover Image
-            </Button>
-          </label>
-          {imagePreview && (
-            <Box sx={{ mt: 2 }}>
-              <img
-                src={imagePreview}
-                alt="Cover Preview"
-                style={{ maxWidth: "120px", maxHeight: "120px" }}
-              />
-            </Box>
-          )}
-          {formik.errors.coverImage && (
-            <div style={{ color: "red", marginTop: "8px" }}>
-              {formik.errors.coverImage}
-            </div>
-          )}
-        </Stack>
         <TextField
           name="duration"
-          label="Duration (minutes)"
-          type="number"
+          label="Duration"
           fullWidth
           sx={{ mb: 2 }}
           value={formik.values.duration}
@@ -195,9 +141,20 @@ const CreateQuiz = () => {
           error={formik.touched.duration && Boolean(formik.errors.duration)}
           helperText={formik.touched.duration && formik.errors.duration}
         />
-        <Button type="submit" variant="contained" color="primary">
-          Submit
+        <Button variant="contained" component="label" sx={{ mb: 2 }}>
+          Upload Cover Image
+          <input type="file" hidden onChange={handleImageChange} />
         </Button>
+        {imagePreview && (
+          <Box sx={{ mb: 2 }}>
+            <img src={imagePreview} alt="Cover Preview" width="100%" />
+          </Box>
+        )}
+        <Stack direction="row" spacing={2}>
+          <Button type="submit" variant="contained" color="primary">
+            Submit
+          </Button>
+        </Stack>
       </form>
     </Box>
   );

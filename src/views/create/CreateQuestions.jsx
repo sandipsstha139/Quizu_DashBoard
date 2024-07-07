@@ -7,12 +7,12 @@ import {
   MenuItem,
   Stack,
   FormControl,
-  InputLabel,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import ApiRequest from "@/utils/apiRequest";
 import { useSnackbar } from "notistack";
+import { useAuth } from "@/context/userContext";
 
 const validationSchema = Yup.object().shape({
   questionTitle: Yup.string().required("Question Title is required"),
@@ -26,29 +26,11 @@ const validationSchema = Yup.object().shape({
 });
 
 const CreateQuestions = () => {
+  const { categories, fetchCategories, addQuestion } = useAuth();
   const [imagePreview, setImagePreview] = useState(null);
-  const [quizzes, setQuizzes] = useState([]);
-  const [categories, setCategories] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
   const [selectedQuestion, setSelectedQuestion] = useState(null);
-
-  const fetchCategoryQuiz = async (id) => {
-    try {
-      const response = await ApiRequest.get(`/category/${id}`);
-      setQuizzes(response?.data?.data?.category?.quizzes || []);
-    } catch (error) {
-      console.error("Error fetching quizzes:", error);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await ApiRequest.get("/category");
-      setCategories(response?.data?.data?.categories || []);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+  const [quizzes, setQuizzes] = useState([]);
 
   useEffect(() => {
     fetchCategories();
@@ -87,18 +69,23 @@ const CreateQuestions = () => {
         formData.append("category", values.category);
         formData.append("quiz", values.quiz);
 
+        let response;
         if (selectedQuestion) {
-          await ApiRequest.patch(`/question/${selectedQuestion._id}`, formData);
+          response = await ApiRequest.patch(
+            `/question/${selectedQuestion._id}`,
+            formData
+          );
           enqueueSnackbar("Question updated successfully", {
             variant: "success",
           });
         } else {
-          await ApiRequest.post("/question", formData);
+          response = await ApiRequest.post("/question", formData);
           enqueueSnackbar("Question added successfully", {
             variant: "success",
           });
         }
 
+        addQuestion(response.data.data.question);
         resetForm();
         setSelectedQuestion(null);
         setImagePreview(null);
@@ -115,11 +102,21 @@ const CreateQuestions = () => {
     formik.setFieldValue("options", newOptions);
   };
 
-  const handleCategoryChange = (event) => {
+  const handleCategoryChange = async (event) => {
     const selectedCategoryId = event.target.value;
     formik.setFieldValue("category", selectedCategoryId);
-    fetchCategoryQuiz(selectedCategoryId);
+    console.log(selectedCategoryId);
+
+    try {
+      const response = await ApiRequest.get(`/category/${selectedCategoryId}`);
+      console.log(response);
+      const categoryQuizzes = response.data.data.category.quizzes || [];
+      setQuizzes(categoryQuizzes);
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+    }
   };
+  console.log(quizzes);
 
   const handleImageChange = (event) => {
     formik.setFieldValue("coverImage", event.currentTarget.files[0]);
@@ -266,7 +263,6 @@ const CreateQuestions = () => {
           />
 
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel htmlFor="select-category">Select Category</InputLabel>
             <Select
               id="select-category"
               name="category"
@@ -274,8 +270,17 @@ const CreateQuestions = () => {
               value={formik.values.category}
               onChange={handleCategoryChange}
               error={formik.touched.category && Boolean(formik.errors.category)}
+              displayEmpty
+              renderValue={
+                formik.values.category !== ""
+                  ? undefined
+                  : () => <em>Select Category</em>
+              }
               sx={{ mb: 2 }}
             >
+              <MenuItem disabled value="">
+                <em>Select Category</em>
+              </MenuItem>
               {categories.length > 0 ? (
                 categories.map((category) => (
                   <MenuItem key={category._id} value={category._id}>
@@ -288,7 +293,6 @@ const CreateQuestions = () => {
             </Select>
           </FormControl>
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel htmlFor="select-quiz">Select Quiz</InputLabel>
             <Select
               id="select-quiz"
               name="quiz"
@@ -296,8 +300,18 @@ const CreateQuestions = () => {
               value={formik.values.quiz}
               onChange={formik.handleChange}
               error={formik.touched.quiz && Boolean(formik.errors.quiz)}
+              displayEmpty
+              // disabled={!selectedCategoryId}
+              renderValue={
+                formik.values.quiz !== ""
+                  ? undefined
+                  : () => <em>Select Quiz</em>
+              }
               sx={{ mb: 2 }}
             >
+              <MenuItem disabled value="">
+                <em>Select Quiz</em>
+              </MenuItem>
               {quizzes.length > 0 ? (
                 quizzes.map((quiz) => (
                   <MenuItem key={quiz._id} value={quiz._id}>

@@ -4,6 +4,7 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import ApiRequest from "@/utils/apiRequest";
 import { useSnackbar } from "notistack";
+import { useAuth } from "@/context/userContext";
 
 const CategorySchema = Yup.object().shape({
   name: Yup.string().required("Category Name is required"),
@@ -11,10 +12,12 @@ const CategorySchema = Yup.object().shape({
 
 const CreateCategory = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { addCategory } = useAuth();
 
   const handleSubmit = async (values, { resetForm }) => {
     try {
       const response = await ApiRequest.post("/category", values);
+      addCategory(response.data.data.category);
       resetForm();
       enqueueSnackbar("Category added successfully", { variant: "success" });
     } catch (error) {
