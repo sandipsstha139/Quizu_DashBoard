@@ -28,7 +28,10 @@ const QuestionsComponent = () => {
   const fetchQuestions = async () => {
     try {
       const response = await ApiRequest.get("/question");
-      setQuestions(response?.data?.data?.questions || []);
+      const sortedQuestions = response?.data?.data?.questions.sort((a, b) => {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+      setQuestions(sortedQuestions || []);
     } catch (error) {
       console.log(error);
     }
