@@ -1,46 +1,51 @@
 "use client";
 import * as React from "react";
 import { styled, useTheme } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import MuiDrawer from "@mui/material/Drawer";
-import MuiAppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import CssBaseline from "@mui/material/CssBaseline";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
+import {
+  Box,
+  Drawer as MuiDrawer,
+  AppBar as MuiAppBar,
+  Toolbar,
+  List,
+  CssBaseline,
+  Typography,
+  Divider,
+  IconButton,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Tooltip, // Import Tooltip from MUI
+} from "@mui/material";
+import {
+  Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Group as GroupIcon,
+  Create,
+  Category,
+  Quiz as QuizIcon,
+  MenuBook as MenuBookIcon,
+  Newspaper as NewspaperIcon,
+  EmojiEvents as EmojiEventsIcon,
+  Logout, // Import Logout icon from MUI
+  Add as AddIcon,
+  Category as CategoryIcon,
+  HelpOutline as QuestionMarkIcon,
+} from "@mui/icons-material";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UserComponent from "@/components/UserComponent";
 import BookComponent from "@/components/BookComponent";
 import NewsComponent from "@/components/NewsComponent";
 import ScoreComponent from "@/components/ScoreComponent";
 import CreateComponent from "@/components/CreateComponent";
-import GroupIcon from "@mui/icons-material/Group";
-import QuizIcon from "@mui/icons-material/Quiz";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
-import NewspaperIcon from "@mui/icons-material/Newspaper";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import { Category, Create, Logout } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import ApiRequest from "@/utils/apiRequest";
 import { useAuth } from "@/context/userContext";
 import QuizComponent from "@/components/QuizComponent";
 import CategoryComponent from "@/components/CategoryComponent";
 import QuestionsComponent from "@/components/QuestionsComponent";
-import AddIcon from "@mui/icons-material/Add";
-import CategoryIcon from "@mui/icons-material/Category";
-import QuestionMarkIcon from "@mui/icons-material/QuestionMark";
-import Link from "next/link";
 
 const drawerWidth = 240;
 
@@ -204,7 +209,11 @@ const DashboardLayout = () => {
                 Quizu Dashboard
               </Typography>
             </Toolbar>
-            <Logout onClick={handleLogout} sx={{ cursor: "pointer" }} />
+            <Tooltip title="Logout">
+              <IconButton onClick={handleLogout} sx={{ cursor: "pointer" }}>
+                <Logout />
+              </IconButton>
+            </Tooltip>
           </AppBar>
           <Drawer variant="permanent" open={open}>
             <DrawerHeader sx={{ bgcolor: "#00b894" }}>
@@ -219,20 +228,20 @@ const DashboardLayout = () => {
             <Divider />
             <List>
               {[
-                "User",
-                "Create",
-                "Category",
-                "Quiz",
-                "Questions",
-                "Book",
-                "News",
-                "Score",
-              ].map((text, index) => (
+                { text: "User", icon: <GroupIcon /> },
+                { text: "Create", icon: <Create /> },
+                { text: "Category", icon: <Category /> },
+                { text: "Quiz", icon: <QuizIcon /> },
+                { text: "Questions", icon: <QuestionMarkIcon /> },
+                { text: "Book", icon: <MenuBookIcon /> },
+                { text: "News", icon: <NewspaperIcon /> },
+                { text: "Score", icon: <EmojiEventsIcon /> },
+              ].map((item, index) => (
                 <ListItem
-                  key={text}
+                  key={item.text}
                   disablePadding
                   sx={{ display: "block" }}
-                  onClick={() => handleNavigation(text)}
+                  onClick={() => handleNavigation(item.text)}
                   button
                 >
                   <ListItemButton
@@ -249,17 +258,12 @@ const DashboardLayout = () => {
                         justifyContent: "center",
                       }}
                     >
-                      {index === 0 && <GroupIcon />}
-                      {index === 1 && <Create />}
-                      {index === 2 && <Category />}
-                      {index === 3 && <QuizIcon />}
-                      {index === 4 && <QuestionMarkIcon />}
-                      {index === 5 && <MenuBookIcon />}
-                      {index === 6 && <NewspaperIcon />}
-                      {index === 7 && <EmojiEventsIcon />}
+                      <Tooltip title={item.text} placement="right">
+                        {item.icon}
+                      </Tooltip>
                     </ListItemIcon>
                     <ListItemText
-                      primary={text}
+                      primary={item.text}
                       sx={{ opacity: open ? 1 : 0 }}
                     />
                   </ListItemButton>
