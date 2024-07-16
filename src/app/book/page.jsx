@@ -10,6 +10,7 @@ const page = () => {
   const router = useRouter();
   useEffect(() => {
     if (!isAuthenticated) {
+      console.log("Not authenticated");
       router.push("/login");
     }
   }, [isAuthenticated]);
