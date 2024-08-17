@@ -1,17 +1,22 @@
 "use client";
-import React from "react";
-import Dashboard from "@/sections/dashboard/Dashboard";
+import React, { Suspense } from "react";
 import { useAuth } from "@/context/userContext";
 import { useRouter } from "next/navigation";
-import UserView from "@/views/user/UserView";
-import { Box } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
+import dynamic from "next/dynamic";
 
-const page = () => {
+const UserView = dynamic(() => import("@/views/user/UserView"), {
+  ssr: false,
+  loading: () => <CircularProgress />,
+});
+
+const Page = () => {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   if (!isAuthenticated) {
     router.push("/login");
+    return null; // Ensure the component doesn't render before redirect
   }
 
   return (
@@ -21,4 +26,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

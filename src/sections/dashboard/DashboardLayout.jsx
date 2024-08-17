@@ -32,6 +32,7 @@ import {
   Add as AddIcon,
   Category as CategoryIcon,
   HelpOutline as QuestionMarkIcon,
+  SupervisedUserCircleOutlined,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -168,12 +169,14 @@ const DashboardLayout = () => {
         return router.push("/news");
       case "Score":
         return router.push("/score");
+      case "Add-Admin":
+        return router.push("/add-admin");
       //   default:
       //     return router.push("/user");
     }
   };
 
-  console.log(isAuthenticated);
+  // console.log(isAuthenticated);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -236,6 +239,7 @@ const DashboardLayout = () => {
                 { text: "Book", icon: <MenuBookIcon /> },
                 { text: "News", icon: <NewspaperIcon /> },
                 { text: "Score", icon: <EmojiEventsIcon /> },
+                { text: "Add-Admin", icon: <SupervisedUserCircleOutlined /> },
               ].map((item, index) => (
                 <ListItem
                   key={item.text}

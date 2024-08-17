@@ -20,19 +20,22 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 
 const UserView = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [users, setUsers] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
 
   const fetchUsers = async () => {
     try {
       const response = await ApiRequest.get("/user");
-      console.log(response);
       setUsers(response?.data?.data?.users?.role_user || []);
+      setAdmins(response?.data?.data?.admin?.role_admin || []);
     } catch (error) {
       console.log(error);
     }
@@ -51,7 +54,11 @@ const UserView = () => {
   const handleDelete = async () => {
     try {
       await ApiRequest.delete(`/user/${selectedUser._id}`);
-      setUsers(users.filter((user) => user._id !== selectedUser._id));
+      if (tabValue === 0) {
+        setUsers(users.filter((user) => user._id !== selectedUser._id));
+      } else {
+        setAdmins(admins.filter((admin) => admin._id !== selectedUser._id));
+      }
       enqueueSnackbar("User deleted successfully", { variant: "success" });
       handleCloseDialog();
       fetchUsers();
@@ -61,16 +68,51 @@ const UserView = () => {
     }
   };
 
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  const renderTableRows = (data) => {
+    return data.map((user) => (
+      <TableRow key={user._id}>
+        <TableCell>
+          <Avatar alt={user.fullname} src={user.avatar} />
+        </TableCell>
+        <TableCell>{user.fullname || "N/A"}</TableCell>
+        <TableCell>{user.email}</TableCell>
+        <TableCell>{user.phNumber || "N/A"}</TableCell>
+        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+        <TableCell>
+          <IconButton
+            edge="end"
+            aria-label="delete"
+            onClick={() => handleOpenDialog(user)}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
   return (
     <Box sx={{ padding: 2 }}>
       <Typography variant="h5" color="#008268" pb={2} gutterBottom>
-        Users Registered
+        Users and Admins
       </Typography>
-      <TableContainer component={Paper}>
+      <Tabs
+        value={tabValue}
+        onChange={handleTabChange}
+        aria-label="user and admin tabs"
+      >
+        <Tab label="Users" />
+        <Tab label="Admins" />
+      </Tabs>
+      <TableContainer component={Paper} sx={{ marginTop: 2 }}>
         <Table sx={{ minWidth: 650 }} aria-label="user table">
           <TableHead>
             <TableRow>
@@ -83,28 +125,7 @@ const UserView = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user._id}>
-                <TableCell>
-                  <Avatar alt={user.fullname} src={user.avatar} />
-                </TableCell>
-                <TableCell>{user.fullname || "N/A"}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.phNumber || "N/A"}</TableCell>
-                <TableCell>
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={() => handleOpenDialog(user)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+            {tabValue === 0 ? renderTableRows(users) : renderTableRows(admins)}
           </TableBody>
         </Table>
       </TableContainer>
@@ -120,12 +141,12 @@ const UserView = () => {
           <DialogTitle id="alert-dialog-title">{"Delete User"}</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              Are you sure you want to delete"
+              Are you sure you want to delete
               <span style={{ fontWeight: "bold" }}>
                 {" "}
                 {selectedUser.fullname || selectedUser.email}
               </span>
-              "?
+              ?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
